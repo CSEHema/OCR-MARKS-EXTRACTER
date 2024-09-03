@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
@@ -8,7 +10,8 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
 
 // Create connection to MySQL database
-const db = mysql.createConnection({
+const db = mysql.createPool({
+    connectionLimit:10,
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,  // Your MySQL password
@@ -16,11 +19,16 @@ const db = mysql.createConnection({
     port: process.env.PORT||3306
 });
 
-db.connect((err) => {
+db.getConnection((err,connection) => {
     if (err) throw err;
     console.log('MySQL Connected...');
+    connection.release();
 });
 
+db.query('SELECT 1',(err,results)=>{
+    if(err) throw err;
+    console.log(results);
+});
 // Route to serve the HTML file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'CT.html'));
