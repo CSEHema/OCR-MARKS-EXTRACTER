@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            height: 60px;
+            width: 100%;
+            background-color: #4a4a4a;
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 3px solid #ddd;
+        }
+
+        .container {
+            width: 50%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            margin-top: 50px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 95%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        input[type="submit"], #b1 {
+            width: 100%;
+            padding: 10px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        input[type="submit"]:hover ,#b1:hover{
+            background-color: #616161;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">OCR MARKS EXTRACTER</div>
+    <div class="body">
+    <div id="info">
+        <label for="stu_name" id="l1">Enter student name:</label>
+        <input type="text" id="stu_name" required><br><br>
+        <label for="exam_name" id="l1">Enter exam name:</label>
+        <input type="text" id="exam_name" required><br><br>
+        <button type="submit" onclick="handleClick(event)" id="b1">Obtain result</button> 
+    </div>
+    <div class="RES" id="RES"></div>
+</div>
+</body>
+<script>
+    function handleClick(event) {
+        event.preventDefault();
+        const name = document.getElementById('stu_name').value;
+        const exam = document.getElementById('exam_name').value;
+        stu_data(name,exam);
+    }
+
+    function stu_data(name,exam) {
+        fetch('/get-marks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, exam })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const resElement = document.getElementById('RES');
+                resElement.innerHTML = '';
+
+                data.results.forEach(subject => {
+                    const subjectName = subject.subject;
+                    const rows = subject.data.map(row => 
+                        `<tr>
+                            <td>${row.std_id}</td>
+                            <td>${row.student_name}</td>
+                            <td>${row.marks}</td>
+                        </tr>`
+                    ).join('');
+
+                    resElement.innerHTML += 
+                        `<h3>${subjectName}</h3>
+                        <table border="1" style="width: 100%; text-align: left;">
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Marks</th>
+                            </tr>
+                            ${rows}
+                        </table>
+                        <br>`
+                    ;
+                });
+            } else {
+                alert('Failed to fetch student data');
+            }
+        });
+    }
+</script>
+</body>
+</html>
