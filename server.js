@@ -9,10 +9,10 @@ app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
 
 // Create connection to MySQL database
 const db = mysql.createConnection({
-    host: 'bxyscl77mcqragnsqdwr-mysql.services.clever-cloud.com',
-    user: 'u0ultlmcxv8rwdlt',
-    password: 'vt55tOCYPKzeoKsqLgSV',  // Your MySQL password
-    database: 'bxyscl77mcqragnsqdwr',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,  // Your MySQL password
+    database: process.env.DB_NAME,
     port:3306
 });
 
