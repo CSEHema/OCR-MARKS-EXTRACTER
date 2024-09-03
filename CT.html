@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Teacher Canvas</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            height: 60px;
+            width: 100%;
+            background-color: #4a4a4a;
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 3px solid #ddd;
+        }
+
+        .container {
+            width: 50%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            margin-top: 50px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        input[type="number"], input[type="text"], input[type="file"] {
+            width: 95%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        input[type="submit"], input[type="button"], #numsub {
+            width: 100%;
+            padding: 10px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        input[type="submit"]:hover, input[type="button"]:hover, #numsub:hover {
+            background-color: #616161;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">OCR MARKS EXTRACTER</div>
+    <div class="body">
+    <form onsubmit="handleSubjects(event);" id="enter" align="center">
+        <label for="sub" id="l1">Enter the number of subjects:</label>
+        <input type="number" id="sub" required>
+        <div id="subjects"></div>
+        <br><br>
+        <input type="submit" id="numsub" value="Next">
+    </form>
+    <br><br>
+<button type="submit" onclick="location.href='Result.html'" id="numsub">Go To Next Page</button>
+</div>
+    <script>
+        function handleSubjects(event) {
+            event.preventDefault(); // Prevent form from submitting
+            var subjectsContainer = document.getElementById("subjects");
+
+            // Clear previous inputs
+            subjectsContainer.innerHTML = '';
+
+            var sub = document.getElementById("sub").value;
+            for (var i = 0; i < sub; i++) {
+                subjectsContainer.innerHTML += `
+                    <div id="subject${i}">
+                        <label for="sname${i}">Enter the subject name:</label>
+                        <input type="text" id="sname${i}" placeholder="Please enter the name without any spaces in between" required>
+                        <label for="sname${i}">Enter the exam name:</label>
+                        <input type="text" id="exam${i}" placeholder="Please enter the name without any spaces in between" required>
+                        <label for="img${i}">Enter the number of images for this subject:</label>
+                        <input type="number" id="img${i}" data-subject="${i}" required>
+                        <div id="images${i}"></div>
+                    </div>
+                    <br>`;
+            }
+
+            subjectsContainer.innerHTML += 
+                `<br><input type="button" value="Done" onclick="handleImages()" id="numsub">`
+            ;
+        }
+
+        function handleImages() {
+            var sub = document.getElementById("sub").value;
+
+            for (var i = 0; i < sub; i++) {
+                var imgCount = document.getElementById(`img${i}`).value;
+                var imagesContainer = document.getElementById(`images${i}`);
+                imagesContainer.innerHTML = ''; // Clear previous inputs
+
+                for (var j = 0; j < imgCount; j++) {
+                    imagesContainer.innerHTML += 
+                        `<div>
+                            <label for="img${i}_${j}">Upload image ${j + 1}:</label>
+                            <input type="file" id="img${i}_${j}" accept="image/*" onchange="convertImageToText(${i}, ${j})" required>
+                        </div>
+                        <div id="text${i}_${j}" style="margin-top: 10px;"></div>`
+                }
+            }
+        }
+
+        function convertImageToText(subjectIndex, imageIndex) {
+            var fileInput = document.getElementById(`img${subjectIndex}_${imageIndex}`);
+            var textContainer = document.getElementById(`text${subjectIndex}_${imageIndex}`);
+
+            if (fileInput.files && fileInput.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    Tesseract.recognize(
+                        e.target.result,
+                        'eng',
+                        {
+                            logger: m => console.log(m)
+                        }
+                    ).then(({ data: { text } }) => {
+                        displayExtractedText(subjectIndex, textContainer, text);
+                    }).catch(err => {
+                        textContainer.innerHTML = `<strong>Error:</strong> ${err.message}`;
+                    });
+                }
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        function displayExtractedText(subjectIndex, container, text) {
+            // Split text into lines
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+
+            // Create a table to display the results
+            let table = `<table border="1" style="width: 100%; text-align: left;">
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Marks</th>
+                            </tr>`;
+            
+            const data = [];
+            lines.forEach(line => {
+                const cells = line.split(/\s+/).filter(cell => cell.trim() !== '');
+                if (cells.length >= 3) {
+                    const rollNo = cells[0];
+                    const studentName = cells.slice(1, -1).join(' ');
+                    const marks = cells[cells.length - 1];
+                    table += `<tr>
+                                <td>${rollNo}</td>
+                                <td>${studentName}</td>
+                                <td>${marks}</td>
+                              </tr>`;
+                    data.push({ rollNo: parseInt(rollNo), studentName, marks: parseInt(marks) });
+                }
+            });
+
+            table += `</table>`;
+            container.innerHTML = `<strong>Extracted Text:</strong> ${table}`;
+
+            const subjectName = document.getElementById(`sname${subjectIndex}`).value;
+            var exam = document.getElementById(`exam${subjectIndex}`).value;
+            sendDataToServer(subjectName, data, exam);
+        }
+
+        function sendDataToServer(subject, data, exam) {
+            fetch('/insert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subject, data, exam })
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</body>
+</html>
